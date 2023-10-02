@@ -149,7 +149,7 @@ const withPillContent = ({
       });
     } else if (tab.value === "replicability") {
       const pcnt = predMarketUtils.computeProbability(
-        metadata.predictionMarket?.votes
+        metadata.predictionMarket?.bets
       );
       finalTabs.push({
         ...tab,

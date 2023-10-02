@@ -12,7 +12,7 @@ type PredictionMarketSummaryProps = {
 
 const PredictionMarketSummary = ({ summary }: PredictionMarketSummaryProps) => {
   const pcnt = useMemo(
-    () => predMarketUtils.computeProbability(summary.votes)?.toFixed(0),
+    () => predMarketUtils.computeProbability(summary.bets)?.toFixed(0),
     [summary]
   );
 

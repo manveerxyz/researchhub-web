@@ -7,26 +7,26 @@ import { StyleSheet, css } from "aphrodite";
 import CommentPlaceholder from "../Comment/CommentPlaceholder";
 import { captureEvent } from "~/config/utils/events";
 import colors from "~/config/themes/colors";
-import { SortOptionValue } from "./lib/options";
+import Dropdown from "../Form/Dropdown";
+import { SortOptionValue, SortOptions } from "./lib/options";
 import { breakpoints } from "~/config/themes/screen";
-import { VoteTreeContext } from "./lib/contexts";
 
 export type PredictionMarketVoteFeedProps = {
   marketId: ID;
   // votes that we want to include, that haven't been fetched yet.
   // we use this to update the UI when a user submits a vote
   includeVotes?: PredictionMarketVote[];
-
-  onVoteRemove: (vote: PredictionMarketVote) => void;
 };
 
 const PredictionMarketVoteFeed = ({
   marketId,
   includeVotes = [],
-  onVoteRemove,
 }: PredictionMarketVoteFeedProps): ReactElement => {
   const [votes, setVotes] = useState<PredictionMarketVote[]>([]);
   const [isFetching, setIsFetching] = useState<boolean>(false);
+  const [selectedSortValue, setSelectedSortValue] = useState<string | null>(
+    SortOptions[0].value
+  );
 
   const handleFetch = async ({
     sort = "CREATED_DATE",
@@ -58,22 +58,25 @@ const PredictionMarketVoteFeed = ({
     handleFetch({});
   }, []);
 
-  const handleRemoveVote = (vote: PredictionMarketVote) => {
-    const newVotes = votes.filter((v) => v.id !== vote.id);
-    setVotes(newVotes);
-    onVoteRemove(vote);
-  };
-
   useEffect(() => {
     // add `includeVotes` to the votes list if they are not already there
     const newVotes = [...votes];
     includeVotes.forEach((vote) => {
       if (!votes.find((v) => v.id === vote.id)) {
-        newVotes.push(vote);
-      } else {
-        // if the vote is already there, update it
-        const index = newVotes.findIndex((v) => v.id === vote.id);
-        newVotes[index] = vote;
+        if (selectedSortValue === "CREATED_DATE") {
+          // put it at the front of the list
+          newVotes.unshift(vote);
+        } else if (selectedSortValue === "BET_AMOUNT") {
+          // put it where it belongs in the list
+          let index = 0;
+          while (
+            index < newVotes.length &&
+            (vote.betAmount || 0) < (newVotes[index].betAmount || 0)
+          ) {
+            index++;
+          }
+          newVotes.splice(index, 0, vote);
+        }
       }
     });
     setVotes(newVotes);
@@ -89,11 +92,19 @@ const PredictionMarketVoteFeed = ({
   );
 
   return (
-    <VoteTreeContext.Provider
-      value={{
-        onRemove: handleRemoveVote,
-      }}
-    >
+    <div>
+      <div className={css(styles.header)}>
+        <Dropdown
+          value={selectedSortValue}
+          handleSelect={(sval) => {
+            setSelectedSortValue(sval);
+            setIsFetching(true);
+            setVotes([]);
+            handleFetch({ sort: sval as SortOptionValue });
+          }}
+          sortOptions={SortOptions}
+        />
+      </div>
       {isFetching && (
         <div className={css(styles.placeholderWrapper)}>
           <CommentPlaceholder />
@@ -130,11 +141,18 @@ const PredictionMarketVoteFeed = ({
       {!isFetching && votes.length === 0 && (
         <div className={css(styles.emptyStateWrapper)}>No votes yet.</div>
       )}
-    </VoteTreeContext.Provider>
+    </div>
   );
 };
 
 const styles = StyleSheet.create({
+  header: {
+    margin: "32px 0 24px 0",
+    display: "flex",
+    paddingBottom: 15,
+    borderBottom: `1px solid ${colors.GREY_BORDER}`,
+    justifyContent: "space-between",
+  },
   placeholderWrapper: {
     marginTop: 15,
   },

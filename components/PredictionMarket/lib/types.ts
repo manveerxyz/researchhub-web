@@ -8,6 +8,11 @@ export type PredictionMarketDetails = {
     yes: number;
     no: number;
   };
+  bets: {
+    total: number;
+    yes: number;
+    no: number;
+  };
   status: "OPEN" | "CLOSED" | "RESOLVED";
   predictionType: "REPLICATION_PREDICTION";
 };
@@ -15,6 +20,11 @@ export type PredictionMarketDetails = {
 export const EmptyPredictionMarketDetails: PredictionMarketDetails = {
   id: "",
   votes: {
+    total: 0,
+    yes: 0,
+    no: 0,
+  },
+  bets: {
     total: 0,
     yes: 0,
     no: 0,
@@ -31,6 +41,11 @@ export const parsePredictionMarketDetails = (
     total: raw.votes.total,
     yes: raw.votes.yes,
     no: raw.votes.no,
+  },
+  bets: {
+    total: raw.bets.total,
+    yes: raw.bets.yes,
+    no: raw.bets.no,
   },
   status: raw.status,
   predictionType: raw.prediction_type,

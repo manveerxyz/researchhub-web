@@ -6,7 +6,7 @@ import UserTooltip from "../Tooltips/User/UserTooltip";
 import ALink from "../ALink";
 import { ReactElement } from "react";
 import { breakpoints } from "~/config/themes/screen";
-import VoteItemMenu from "./VoteItemMenu";
+import ResearchCoinIcon from "../Icons/ResearchCoinIcon";
 
 export type PredictionMarketVoteItemProps = {
   vote: PredictionMarketVote;
@@ -51,12 +51,16 @@ const PredictionMarketVoteItem = ({
                 {vote.vote}
               </div>
             </div>
-            <div className={css(styles.menuWrapper)}>
-              <VoteItemMenu vote={vote} />
-            </div>
           </div>
           <div className={css(styles.lightText)}>{vote.timeAgo}</div>
         </div>
+      </div>
+      <div className={css(styles.rightContent)}>
+        <ResearchCoinIcon width={18} height={18} />
+        <span className={css(styles.betText)}>
+          {(vote.betAmount || 0).toFixed(0)}
+          &nbsp;RSC
+        </span>
       </div>
     </div>
   );
@@ -117,11 +121,21 @@ const styles = StyleSheet.create({
     columnGap: "5px",
   },
 
-  menuWrapper: {
-    marginLeft: "auto",
-    marginTop: -10,
+  rightContent: {
     display: "flex",
     alignItems: "center",
+    [`@media only screen and (max-width: ${breakpoints.medium.str})`]: {
+      marginLeft: 40,
+    },
+  },
+  betText: {
+    fontSize: 16,
+    fontWeight: 400,
+    marginLeft: 8,
+    color: colors.ORANGE_LIGHT2(),
+    [`@media only screen and (max-width: ${breakpoints.medium.str})`]: {
+      fontSize: 14,
+    },
   },
 });
 

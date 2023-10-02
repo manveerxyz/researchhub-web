@@ -23,10 +23,11 @@ import { RootState } from "~/redux";
 import { parseUser } from "~/config/types/root_types";
 import { isEmpty } from "~/config/utils/nullchecks";
 import colors from "~/config/themes/colors";
-import { COMMENT_TYPES, parseComment } from "~/components/Comment/lib/types";
+import { COMMENT_TYPES } from "~/components/Comment/lib/types";
 import CommentFeed from "~/components/Comment/CommentFeed";
 import getCommentFilterByTab from "../lib/getCommentFilterByTab";
 import HorizontalTabBar from "~/components/HorizontalTabBar";
+import PreviousUserVotes from "~/components/PredictionMarket/PreviousUserVotes";
 
 interface Args {
   documentData?: any;
@@ -111,15 +112,6 @@ const DocumentReplicationMarketPage: NextPage<Args> = ({
   // Update the local state when a vote is created
   const handleVoteCreated = (vote: PredictionMarketVote) => {
     if (market) {
-      // this is a fallback in-case we fail to fetch the user's vote from the backend
-      // double-check if there's an existing vote that matches the vote id,
-      // in which case we should update the vote instead of creating a new one
-      const existingVote = votes.find((v) => v.id === vote.id);
-      if (existingVote) {
-        handleVoteUpdated(vote, existingVote);
-        return;
-      }
-
       const newMarket = {
         ...market,
         votes: {
@@ -127,6 +119,13 @@ const DocumentReplicationMarketPage: NextPage<Args> = ({
           total: market.votes.total + 1,
           yes: market.votes.yes + (vote.vote === "YES" ? 1 : 0),
           no: market.votes.no + (vote.vote === "NO" ? 1 : 0),
+        },
+        bets: {
+          ...market.bets,
+          total: market.bets.total + (vote.betAmount || 0),
+          yes:
+            market.bets.yes + (vote.vote === "YES" ? vote.betAmount || 0 : 0),
+          no: market.bets.no + (vote.vote === "NO" ? vote.betAmount || 0 : 0),
         },
       };
 
@@ -141,65 +140,6 @@ const DocumentReplicationMarketPage: NextPage<Args> = ({
         ...documentMetadata,
         predictionMarket: newMarket,
       });
-    }
-    revalidateDocument();
-  };
-
-  // Update the local state when a vote is updated
-  const handleVoteUpdated = (
-    newVote: PredictionMarketVote,
-    prevVote: PredictionMarketVote
-  ) => {
-    if (market) {
-      const newMarket = {
-        ...market,
-        votes: {
-          ...market.votes,
-          yes:
-            market.votes.yes +
-            (newVote.vote === "YES" ? 1 : 0) -
-            (prevVote.vote === "YES" ? 1 : 0),
-          no:
-            market.votes.no +
-            (newVote.vote === "NO" ? 1 : 0) -
-            (prevVote.vote === "NO" ? 1 : 0),
-        },
-      };
-
-      setMarket(newMarket);
-      setVotes([newVote, ...votes.filter((v) => v.id !== newVote.id)]);
-      setDocumentMetadata({
-        ...documentMetadata,
-        predictionMarket: newMarket,
-      });
-    }
-    revalidateDocument();
-  };
-
-  const handleVoteRemoved = (vote: PredictionMarketVote) => {
-    if (market) {
-      const newMarket = {
-        ...market,
-        votes: {
-          ...market.votes,
-          total: market.votes.total - 1,
-          yes: market.votes.yes - (vote.vote === "YES" ? 1 : 0),
-          no: market.votes.no - (vote.vote === "NO" ? 1 : 0),
-        },
-      };
-
-      setMarket(newMarket);
-      setVotes([...votes.filter((v) => v.id !== vote.id)]);
-      setDocumentMetadata({
-        ...documentMetadata,
-        predictionMarket: newMarket,
-      });
-
-      if (vote.createdBy.id === currentUser?.id) {
-        // if the vote was created by the current user, we need to refresh the vote form
-        // so that it doesn't have the user's "previos vote" cached.
-        setFormRefreshKey(formRefreshKey + 1);
-      }
     }
     revalidateDocument();
   };
@@ -233,10 +173,10 @@ const DocumentReplicationMarketPage: NextPage<Args> = ({
               paperId={document.id}
               predictionMarket={market}
               onVoteCreated={handleVoteCreated}
-              onVoteUpdated={handleVoteUpdated}
               isCurrentUserAuthor={isCurrentUserAuthor}
               refreshKey={formRefreshKey}
             />
+            <PreviousUserVotes market={market} includeVotes={votes} />
           </div>
 
           <div className={css(styles.tabsHeader)}>
@@ -265,7 +205,6 @@ const DocumentReplicationMarketPage: NextPage<Args> = ({
             <PredictionMarketVoteFeed
               marketId={market.id}
               includeVotes={votes}
-              onVoteRemove={handleVoteRemoved}
             />
           )}
           {tab === "COMMENTS" && (
@@ -300,7 +239,7 @@ const DocumentReplicationMarketPage: NextPage<Args> = ({
 
 const styles = StyleSheet.create({
   tabsHeader: {
-    margin: "45px 0 24px 0",
+    margin: "32px 0 24px 0",
     borderBottom: `1px solid ${colors.GREY_BORDER}`,
   },
   tab: {
