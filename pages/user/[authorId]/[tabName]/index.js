@@ -178,6 +178,11 @@ function AuthorPage(props) {
           label: "Authored Papers",
           value: "authored-papers",
         },
+        {
+          href: "replication-votes",
+          label: "Replication Votes",
+          value: "replication-votes",
+        },
       ];
 
       if (allowEdit) {
@@ -409,6 +414,18 @@ function AuthorPage(props) {
           isVisible={tabName === "authored-papers"}
           author={author}
           contributionType="authored-papers"
+          isFetchingAuthor={fetching}
+        />
+      </div>
+      <div
+        className={css(
+          tabName === "replication-votes" ? styles.reveal : styles.hidden
+        )}
+      >
+        <AuthorActivityFeed
+          isVisible={tabName === "replication-votes"}
+          author={author}
+          contributionType="replication_vote"
           isFetchingAuthor={fetching}
         />
       </div>
